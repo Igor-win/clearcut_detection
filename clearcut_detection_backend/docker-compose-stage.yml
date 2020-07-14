@@ -5,9 +5,9 @@ db_stage:
     - 5432
   env_file:
     - db.env
-  volumes:
-    - db-data:/var/lib/postgresql/data
-    - ./:/code
+#  volumes:
+#    - db-data:/var/lib/postgresql/data
+#    - ./:/code
 
 model_stage:
   build: ./model
