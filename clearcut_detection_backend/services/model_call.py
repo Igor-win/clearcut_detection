@@ -10,6 +10,7 @@ from clearcuts.geojson_save import save
 from clearcuts.models import TileInformation, RunUpdateTask, Tile
 from services.prepare_tif import prepare_tiff
 from services.configuration import area_tile_set
+from clearcut_detection_backend import celery_app
 
 model_call_config = './model_call_config.yml'
 logger = logging.getLogger('model_call')
@@ -65,7 +66,6 @@ class ModelCaller:
                         results[tile_index] = 1
                     else:
                         logger.info(f'start model_predict for {tile_index}')
-                        self.model_predict(self.query.filter(tile_index__exact=tile_index))
                         del results[tile_index]
 
                         tile_list = self.query.filter(tile_index__exact=tile_index).order_by('tile_name')
@@ -74,7 +74,11 @@ class ModelCaller:
                         image_date_0 = tile_list[0].tile_date
                         image_date_1 = tile_list[1].tile_date
 
-                        tile = Tile.objects.get(tile_index=tile_index)
+                        tile, created = Tile.objects.get_or_create(tile_index=tile_index)  # TODO
+                        if created:
+                            tile.is_tracked = 1
+                            tile.save()
+
                         task = RunUpdateTask(tile_index=tile,
                                              path_type=path_type,
                                              path_img_0=path_img_0,
@@ -83,13 +87,13 @@ class ModelCaller:
                                              image_date_1=image_date_1,
                                              )
                         task.save()
+                        # self.model_predict(self.query.filter(tile_index__exact=tile_index))  # TODO take tusk id
 
+                        model_add_task(task.id)
 
-
-
-                    if len(results) > 0:
-                        logger.error(f'results after model_predict not empty.\n\
-                          results: {results}')
+        if len(results) > 0:
+            logger.error(f'results after model_predict not empty.\n\
+              results: {results}')
 
     @staticmethod
     def remove_temp_files(path, tile_name):
@@ -117,6 +121,7 @@ class ModelCaller:
         if os.path.exists(results_path):
             save(tile, results_path)
 
+
 # TODO: add docstring
 def raster_prediction(tif_path):
     with open(model_call_config, 'r') as config:
@@ -136,3 +141,20 @@ def raster_prediction(tif_path):
         return datastore
     except (ValueError, Exception):
         logger.error('Error\n\n', exc_info=True)
+
+
+def model_add_task(task_id):
+    """
+    Add run update task task in to 'run_update_task' queue
+    :param task_id:
+    :return:
+    """
+    print(f'now we in model_add_task with kwargs[task_id] = {task_id}')
+    celery_app.send_task(
+        name='tasks.run_model_predict',
+        queue='model_predict_queue',
+        kwargs={'task_id': task_id},
+    )
+    print(f'app.send_task is ok task_id = {task_id}')
+
+

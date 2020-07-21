@@ -99,7 +99,7 @@ EMAIL_USE_TLS = True
 EMAIL_PORT = 587
 EMAIL_HOST_USER = 'from@gmail.com'
 EMAIL_HOST_PASSWORD = 'from_password'
-EMAIL_ADMIN_MAILS = ['admin@example.com']
+EMAIL_ADMIN_MAILS = ['admin@example.com', ]
 
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
@@ -159,6 +159,14 @@ MODEL_TIFFS_DIR = Path('./data/model_tiffs')
 MAPBOX_TIFFS_DIR = Path('./data/mapbox_tiffs')
 
 PATH_TYPE = 'fs'
+
+# Celery settings
+
+BROKER_URL = 'amqp://guest:guest@rabbitmq:5672//'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+
 
 LOGGING = {
     'version': 1,

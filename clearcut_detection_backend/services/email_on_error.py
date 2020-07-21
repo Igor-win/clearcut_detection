@@ -53,8 +53,8 @@ class EmailOnErrorHandler(logging.Handler):
         send_mail(subject,
                   message,
                   from_email=settings.EMAIL_HOST_USER,
-                  recipient_list=settings.EMAIL_ADMIN_MAIL,
-                  fail_silently=False,
+                  recipient_list=settings.EMAIL_ADMIN_MAILS,
+                  fail_silently=True,
                   html_message=html_message
                   )
 
